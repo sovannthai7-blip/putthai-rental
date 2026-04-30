@@ -1,208 +1,194 @@
-/**
- * PUTTHAI Rental — Telegram Webhook Function
- * Netlify Serverless Function (Node.js)
- */
+// PUTTHAI Rental — Telegram Bot Webhook
+const https = require('https');
 
-'use strict';
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8689603493:AAESjzErIj0gb6iLA0gmUDUj16O22rzp-VQ';
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '2079207099';
+const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY || 'AIzaSyDXhozODBbLA5cnSH8bxfxjjTxxlk1xGaI';
+const FIREBASE_PROJECT = 'room-rental-kh';
+const OWNER_UID = 'vnS4H9c5HBOvBqUxUKpTqho0aMt2';
 
-var https = require('https');
-
-// ── Environment Variables ──
-var BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-var FIREBASE_PROJECT = process.env.FIREBASE_PROJECT_ID || '';
-var FIREBASE_TOKEN = process.env.FIREBASE_TOKEN || '';
-
-// ── Send Telegram Message ──
-function sendMessage(chatId, text, callback) {
-    try {
-        var body = JSON.stringify({
-            chat_id: chatId,
-            text: text
-        });
-
-        var req = https.request({
+function sendMessage(chatId, text) {
+    return new Promise((resolve) => {
+        const body = JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' });
+        const req = https.request({
             hostname: 'api.telegram.org',
-            path: '/bot' + BOT_TOKEN + '/sendMessage',
+            path: /bot${BOT_TOKEN}/sendMessage,
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(body)
-            }
-        }, function(res) {
-            var data = '';
-            res.on('data', function(d) { data += d; });
-            res.on('end', function() {
-                console.log('Telegram response:', data);
-                if (callback) callback(null);
-            });
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+        }, res => {
+            let data = '';
+            res.on('data', d => data += d);
+            res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { resolve(null); } });
         });
-
-        req.on('error', function(e) {
-            console.error('Telegram request error:', e.message);
-            if (callback) callback(null);
-        });
-
+        req.on('error', () => resolve(null));
         req.write(body);
         req.end();
-
-    } catch(e) {
-        console.error('sendMessage error:', e.message);
-        if (callback) callback(null);
-    }
+    });
 }
 
-// ── Save ChatId to Firestore ──
-function saveLink(chatId, custId, callback) {
-    try {
-        if (!FIREBASE_PROJECT) {
-            console.error('FIREBASE_PROJECT_ID not set');
-            if (callback) callback(null);
-            return;
-        }
-
-        var body = JSON.stringify({
-            fields: {
-                chatId:    { stringValue: String(chatId) },
-                custId:    { stringValue: String(custId) },
-                linkedAt:  { stringValue: new Date().toISOString() }
-            }
-        });
-
-        var path = '/v1/projects/' + FIREBASE_PROJECT +
-                   '/databases/(default)/documents/telegram_links/' + chatId;
-
-        var headers = {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(body)
-        };
-
-        // Use Authorization token if available
-        if (FIREBASE_TOKEN) {
-            headers['Authorization'] = 'Bearer ' + FIREBASE_TOKEN;
-        }
-
-        var req = https.request({
+async function getCustomerName(custId) {
+    return new Promise((resolve) => {
+        const req = https.request({
             hostname: 'firestore.googleapis.com',
-            path: path,
-            method: 'PATCH',
-            headers: headers
-        }, function(res) {
-            var data = '';
-            res.on('data', function(d) { data += d; });
-            res.on('end', function() {
-                console.log('Firestore response status:', res.statusCode);
-                if (callback) callback(null);
+            path: /v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${OWNER_UID}?key=${FIREBASE_API_KEY},
+            method: 'GET'
+        }, res => {
+            let data = '';
+            res.on('data', d => data += d);
+            res.on('end', () => {
+                try {
+                    const doc = JSON.parse(data);
+                    const customers = doc.fields?.customers?.arrayValue?.values || [];
+                    const cust = customers.find(c => c.mapValue?.fields?.id?.stringValue === custId);
+                    resolve(cust ? cust.mapValue.fields.name?.stringValue : null);
+                } catch(e) { resolve(null); }
             });
         });
-
-        req.on('error', function(e) {
-            console.error('Firestore request error:', e.message);
-            if (callback) callback(null);
-        });
-
-        req.write(body);
+        req.on('error', () => resolve(null));
         req.end();
-
-    } catch(e) {
-        console.error('saveLink error:', e.message);
-        if (callback) callback(null);
-    }
+    });
 }
 
-// ── Main Handler ──
-exports.handler = function(event, context, callback) {
-    var ok = { statusCode: 200, body: 'OK' };
+// Save to telegram_links collection (simple + reliable)
+async function saveTelegramLink(custId, chatId) {
+    console.log('[DEBUG] saveTelegramLink - custId:', custId, 'chatId:', chatId);
+    return new Promise((resolve) => {
+        const docId = String(chatId);
+        const body = JSON.stringify({
+            fields: {
+                chatId: { stringValue: String(chatId) },
+                custId: { stringValue: String(custId) },
+                linkedAt: { timestampValue: new Date().toISOString() }
+            }
+        });
+        const req = https.request({
+            hostname: 'firestore.googleapis.com',
+            path: /v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/telegram_links/${docId}?key=${FIREBASE_API_KEY},
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+        }, res => {
+            res.on('data', () => {});
+            res.on('end', () => resolve(res.statusCode === 200));
+        });
+        req.on('error', () => resolve(false));
+        req.write(body);
+        req.end();
+    });
+}
 
+async function saveChatId(custId, chatId) {
     try {
-        // Only accept POST
-        if (event.httpMethod !== 'POST') {
-            console.log('Non-POST request, ignoring');
-            return callback(null, ok);
-        }
+        const docRes = await new Promise((resolve) => {
+            const req = https.request({
+                hostname: 'firestore.googleapis.com',
+                path: /v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${OWNER_UID}?key=${FIREBASE_API_KEY},
+                method: 'GET'
+            }, res => {
+                let data = '';
+                res.on('data', d => data += d);
+                res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { resolve(null); } });
+            });
+            req.on('error', () => resolve(null));
+            req.end();
+        });
 
-        // Check BOT_TOKEN
-        if (!BOT_TOKEN) {
-            console.error('TELEGRAM_BOT_TOKEN not set');
-            return callback(null, ok);
-        }
+        if (!docRes || !docRes.fields) return false;
+let customers = docRes.fields.customers?.arrayValue?.values || [];
+        let found = false;
+        customers = customers.map(c => {
+            if (c.mapValue?.fields?.id?.stringValue === custId) {
+                found = true;
+                c.mapValue.fields.telegramChatId = { stringValue: String(chatId) };
+            }
+            return c;
+        });
 
-        // Parse body
-        if (!event.body) {
-            console.log('Empty body');
-            return callback(null, ok);
-        }
+        if (!found) return false;
 
-        var body;
-        try {
-            body = JSON.parse(event.body);
-        } catch(e) {
-            console.error('JSON parse error:', e.message);
-            return callback(null, ok);
-        }
+        const updateBody = JSON.stringify({
+            fields: { ...docRes.fields, customers: { arrayValue: { values: customers } } }
+        });
 
-        // Validate message
-        if (!body || !body.message) {
-            console.log('No message in body');
-            return callback(null, ok);
-        }
+        return new Promise((resolve) => {
+            const req = https.request({
+                hostname: 'firestore.googleapis.com',
+                path: /v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${OWNER_UID}?key=${FIREBASE_API_KEY},
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(updateBody) }
+            }, res => {
+                res.on('data', () => {});
+                res.on('end', () => resolve(res.statusCode === 200));
+            });
+            req.on('error', () => resolve(false));
+            req.write(updateBody);
+            req.end();
+        });
+    } catch(e) { return false; }
+}
 
-        var msg = body.message;
+exports.handler = async (event) => {
+    if (event.httpMethod !== 'POST') {
+        return { statusCode: 200, body: 'PUTTHAI Bot OK' };
+    }
+    try {
+        const update = JSON.parse(event.body || '{}');
+        const msg = update.message;
+        if (!msg) return { statusCode: 200, body: 'OK' };
 
-        if (!msg.from || !msg.from.id) {
-            console.log('No from.id in message');
-            return callback(null, ok);
-        }
+        const chatId = msg.chat.id;
+        const text = msg.text || '';
+        const firstName = msg.from?.first_name || 'Customer';
 
-        var chatId = msg.from.id;
-        var text = (msg.text || '').trim();
+        if (text.startsWith('/start')) {
+            const parts = text.split(' ');
+            const custId = parts[1] || '';
+            console.log('[DEBUG] /start received, text:', text);
+            console.log('[DEBUG] custId extracted:', custId);
+            console.log('[DEBUG] chatId:', chatId);
 
-        console.log('Received message from chatId:', chatId, 'text:', text);
-
-        // ── Handle Commands ──
-        if (text.indexOf('/start') === 0) {
-            var parts = text.split(' ');
-            var param = (parts[1] || '').trim();
-
-            if (param.indexOf('cust_') === 0) {
-                var custId = param.replace('cust_', '');
-                console.log('Linking chatId', chatId, 'to custId', custId);
-
-                saveLink(chatId, custId, function() {
-                    sendMessage(chatId,
-                        'PUTTHAI Rental\n\n' +
-                        'បានភ្ជាប់រួចរាល់!\n\n' +
-                        'អ្នកនឹងទទួល Invoice តាម Telegram នេះ។',
-                        function() { callback(null, ok); }
+            if (custId) {
+                // Reply Customer ភ្លាម
+                await sendMessage(chatId,
+                    \u2705 \u179F\u1BD0\u179F\u17D0\u178F\u17B7 <b>${firstName}</b>!\n\n +
+                    \uD83C\uDFE0 <b>PUTTHAI Rental</b>\n +
+                    \uD83D\uDCF1 Telegram \u178F\u17D0\u1786\u1799\u17BC\u1785\u17A0\u17C2\u1799!\n\n +
+                    Put \u1793\u17D0\u1784\u179A\u17D2\u179A\u1786\u17BE\u178A:\n +
+                    \uD83D\uDCC4 \u179C\u17B7\u1780\u17D2\u1780\u1799\u1794\u178F\u17D2\u179A\u1794\u17D2\u179A\u1785\u17B6\u1781\u17C2\n +
+                    \uD83E\uDDFE \u1794\u1784\u17D2\u1780\u17B6\u1793\u17D0\u178A\u17C2\n +
+                    \uD83D\uDCE2 \u1787\u17BC\u1793\u178A\u17C6\u1793\u17B9\u1784\n\n +
+                    \uD83D\uDE4F \u179F\u17BC\u1798\u17A2\u179A\u1782\u17BB\u178E!
+                );
+                // Save + Notify Admin
+                try {
+                    const custName = await getCustomerName(custId);
+                    const saved = await saveTelegramLink(custId, chatId);
+                    await saveChatId(custId, chatId);
+                    const name = custName || firstName;
+                    await sendMessage(ADMIN_CHAT_ID,
+                        \uD83D\uDD14 \u17A2\u178F\u17B7\u1790\u1787\u1793\u1794\u17B6\u1793\u178E\u17D2\u1787\u17B6\u1794\u17CB!\n\n +
+                        \uD83D\uDC64 <b>${name}</b>\n +
+                        \uD83D\uDCF1 ChatID: <code>${chatId}</code>\n +
+                        \u2705 Save: ${saved ? 'OK' : 'Manual'}
                     );
-                });
-
+                } catch(e) {
+                    await sendMessage(ADMIN_CHAT_ID,
+                        \uD83D\uDD14 Customer START!\n\uD83D\uDC64 ${firstName}\n\uD83D\uDCF1 <code>${chatId}</code>
+                    );
+                }
             } else {
-                sendMessage(chatId,
-                    'PUTTHAI Rental Bot\n\n' +
-                    'សូមស្គែន QR Code លើ Invoice\n' +
-                    'ដើម្បីភ្ជាប់គណនី\n\n' +
-                    'Chat ID: ' + chatId,
-                    function() { callback(null, ok); }
+                await sendMessage(chatId,
+                    \uD83C\uDFE0 \u179F\u1BD0\u179F\u17D0\u178F\u17B7 <b>${firstName}</b>!\n\n +
+                    Welcome to <b>PUTTHAI Rental Bot</b>!\n\n +
+                    \uD83D\uDCF1 \u179F\u17BC\u1798 Scan QR Code \u1796\u17B8 Invoice\n +
+                    \u178A\u17BE\u1798\u17D2\u1794\u17B7\u178E\u17D2\u1787\u17B6\u1794\u1782\u178E\u1793\u17B8\u179A\u1794\u179F\u17CB\u17A2\u17D2\u1793\u1780\u17D0
+                );
+                await sendMessage(ADMIN_CHAT_ID,
+                    \uD83D\uDD14 \u1798\u17B6\u1793\u17A2\u17D2\u1793\u1780\u1785\u17BC\u179B Bot!\n\uD83D\uDC64 ${firstName}\n\uD83D\uDCF1 <code>${chatId}</code>\n\u26A0\uFE0F \u1798\u17B7\u1793\u178F\u17B6\u1793\u17CB Scan QR
                 );
             }
-
-        } else if (text === '/mychatid') {
-            sendMessage(chatId,
-                'Chat ID: ' + chatId,
-                function() { callback(null, ok); }
-            );
-
-        } else {
-            sendMessage(chatId,
-                'PUTTHAI Rental Bot\n\n' +
-                '/mychatid - មើល Chat ID\n\n' +
-                'ស្គែន QR Code លើ Invoice',
-                function() { callback(null, ok); }
-            );
         }
-
+        return { statusCode: 200, body: 'OK' };
     } catch(e) {
-        console.error('Handler error:', e.message);
-        return callback(null, ok);
+        return { statusCode: 200, body: 'OK' };
     }
 };
