@@ -34,10 +34,7 @@ function sendMessage(chatId, text, callback) {
     req.write(body);
     req.end();
 }
-
-/**
- * រក្សាទុកទិន្នន័យទៅ Firestore
- */
+// Save to Firestore
 function saveLink(chatId, custId, firstName, callback) {
     const body = JSON.stringify({
         fields: {
