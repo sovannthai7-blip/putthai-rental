@@ -16,7 +16,7 @@ function sendMessage(chatId, text, callback) {
 
     const options = {
         hostname: 'api.telegram.org',
-        path: `/bot${BOT_TOKEN}/sendMessage`,
+        Path: '/bot' + BOT_TOKEN + '/sendMessage',
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
