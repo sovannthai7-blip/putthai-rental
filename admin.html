@@ -16124,13 +16124,16 @@ auth.onAuthStateChanged(async function(user) {
             snap.docs.forEach(doc => {
                 let d = doc.data();
                 if (!d.custId || !d.chatId) return;
-                let cust = customers.find(c =>
-                    c.id===d.custId || c.id==='cust_'+d.custId ||
-                    c.id.replace('cust_','')===d.custId.replace('cust_','')
-                );
+                let cust = customers.find(c => {
+                    if (!c.id) return false;
+                    let cid = c.id.replace('cust_','');
+                    let did = String(d.custId||'').replace('cust_','');
+                    return c.id===d.custId || c.id==='cust_'+d.custId ||
+                           cid===did || cid.includes(did) || did.includes(cid);
+                });
                 if (cust) {
-                    if (!cust.telegramChatId) cust.telegramChatId = String(d.chatId);
-                    if (d.firstName && !cust.telegramName) cust.telegramName = d.firstName;
+                    cust.telegramChatId = String(d.chatId);
+                    if (d.firstName) cust.telegramName = d.firstName;
                 }
             });
             renderCustomerList();
@@ -16148,7 +16151,13 @@ auth.onAuthStateChanged(async function(user) {
                     window._tgCache.d[d.custId] = d.chatId;
                     // Update customer object
                     // Match custId with or without "cust_" prefix
-                    let cust = customers.find(c => c.id === d.custId || c.id === 'cust_' + d.custId || c.id.replace('cust_','') === d.custId.replace('cust_',''));
+                    let cust = customers.find(c => {
+                        if (!c.id) return false;
+                        let cid = c.id.replace('cust_','');
+                        let did = String(d.custId||'').replace('cust_','');
+                        return c.id===d.custId || c.id==='cust_'+d.custId ||
+                               cid===did || cid.includes(did) || did.includes(cid);
+                    });
                     if (cust) {
                         cust.telegramChatId = String(d.chatId);
                         if (d.firstName) cust.telegramName = d.firstName;
