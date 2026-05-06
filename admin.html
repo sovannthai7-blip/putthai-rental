@@ -968,7 +968,7 @@
                 </div>
             </div>
             <table>
-                <thead><tr><th>ឈ្មោះ</th><th>ទូរស័ព្ទ</th><th>បន្ទប់</th><th>ថ្ងៃចូល</th><th>ថ្ងៃចាកចេញ</th><th>ប្រាក់កក់</th><th>ស្ថានភាព</th><th>សកម្មភាព</th></tr></thead>
+                <thead><tr><th>ឈ្មោះ</th><th>ទូរស័ព្ទ</th><th>បន្ទប់</th><th>ថ្ងៃចូល</th><th>ថ្ងៃចាកចេញ</th><th>ប្រាក់កក់</th><th>ស្ថានភាព</th><th>✈️</th><th>សកម្មភាព</th></tr></thead>
                 <tbody id="customer-list-body"></tbody>
             </table>
         </div>
@@ -1243,6 +1243,8 @@
                 <button class="settings-tab" onclick="showSettingsTab('sound')">🔊 សំឡេង</button>
                 <button class="settings-tab" onclick="showSettingsTab('service')">📝 ថ្លៃសេវា</button>
                 <button class="settings-tab" onclick="showSettingsTab('qr')">📱 QR Code</button>
+                <button class="settings-tab" onclick="showSettingsTab('qrbot')">✈️ QR Bot</button>
+                <button class="settings-tab" onclick="showSettingsTab('aba')" style="opacity:0.5;" title="Coming Soon">🏦 ABA</button>
                 <button class="settings-tab" onclick="showSettingsTab('telegram')">✈️ Telegram</button>
                 <button class="settings-tab" onclick="showSettingsTab('display')">🖥️ ការបង្ហាញ</button>
                 <button class="settings-tab" onclick="showSettingsTab('template')">🖨️ Template</button>
@@ -1823,14 +1825,43 @@
                     <div style="font-size:13px;font-weight:700;color:#1a2744;margin-bottom:12px;">✈️ Telegram Bot</div>
                     <div style="margin-bottom:10px;">
                         <div style="font-size:11px;color:#64748b;margin-bottom:4px;font-weight:600;">🤖 Bot Token</div>
-                        <input type="text" id="tg-bot-token" placeholder="1234567890:AAF..."
-                            style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:monospace;">
+                        <div style="display:flex;gap:6px;">
+                            <input type="password" id="tg-bot-token" placeholder="1234567890:AAF..."
+                                style="flex:1;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:monospace;">
+                            <button id="tg-lock-btn" onclick="showPinPrompt('both',this)" style="padding:6px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;cursor:pointer;font-size:13px;">🔒</button>
+                        </div>
                     </div>
                     <div style="margin-bottom:12px;">
                         <div style="font-size:11px;color:#64748b;margin-bottom:4px;font-weight:600;">👤 Admin ChatID</div>
-                        <input type="text" id="tg-admin-chatid" placeholder="2079207099"
-                            style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:monospace;">
+                        <div style="display:flex;gap:6px;">
+                            <input type="password" id="tg-admin-chatid" placeholder="2079207099"
+                                style="flex:1;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:monospace;">
+                        </div>
                         <div style="font-size:10px;color:#94a3b8;margin-top:3px;">រក ID: @myidbot → /getid</div>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <div style="font-size:11px;color:#64748b;font-weight:600;margin-bottom:6px;">📤 Auto Send ទៅ Customer:</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+                                <input type="checkbox" id="tg-auto-invoice" onchange="saveTelegramSettings()"> 📄 Invoice
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+                                <input type="checkbox" id="tg-auto-receipt" onchange="saveTelegramSettings()"> 🧾 Receipt
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+                                <input type="checkbox" id="tg-auto-utility" onchange="saveTelegramSettings()"> 💧 Utility
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+                                <input type="checkbox" id="tg-auto-checkout" onchange="saveTelegramSettings()"> 🚪 Checkout
+                            </label>
+                        </div>
+                    </div>
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;margin-bottom:10px;">
+                        <div id="tg-pin-status" style="font-size:11px;margin-bottom:6px;color:#f59e0b;">⚠️ PIN មិនទាន់ Set</div>
+                        <div style="display:flex;gap:6px;">
+                            <button onclick="pinShowSet()" style="flex:1;padding:5px;border:1px solid #e2e8f0;border-radius:6px;background:white;font-size:11px;cursor:pointer;">🔐 Set PIN</button>
+                            <button onclick="showModal('change-pin-modal')" style="flex:1;padding:5px;border:1px solid #e2e8f0;border-radius:6px;background:white;font-size:11px;cursor:pointer;">🔄 Change PIN</button>
+                        </div>
                     </div>
                     <div style="display:flex;gap:8px;margin-bottom:10px;">
                         <button class="btn btn-success" onclick="saveTelegramSettings()" style="flex:1;"><i class="fas fa-save"></i> រក្សាទុក</button>
@@ -1852,6 +1883,62 @@
                             style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:inherit;resize:vertical;"></textarea>
                     </div>
                     <button class="btn btn-primary" onclick="sendTelegramBroadcast()" style="width:100%;">📢 ផ្ញើ</button>
+                </div>
+            </div>
+
+            <!-- ABA PAYMENT -->
+            <div id="settings-aba" class="settings-panel">
+                <div style="border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;background:white;">
+                    <div style="font-size:13px;font-weight:700;color:#1a2744;margin-bottom:8px;">🏦 ABA Payment Gateway</div>
+                    <div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:10px;margin-bottom:12px;font-size:11px;color:#92400e;">
+                        ⚠️ Coming Soon — ត្រូវការ ABA Merchant Account
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Merchant ID</div>
+                        <input type="text" id="aba-merchant-id" placeholder="M012345" disabled
+                            style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;background:#f8fafc;opacity:0.6;">
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">API Key</div>
+                        <input type="password" id="aba-api-key" placeholder="••••••••" disabled
+                            style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;background:#f8fafc;opacity:0.6;">
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Secret Key</div>
+                        <input type="password" id="aba-secret-key" placeholder="••••••••" disabled
+                            style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;background:#f8fafc;opacity:0.6;">
+                    </div>
+                    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px;font-size:11px;color:#0369a1;">
+                        🔗 Webhook URL:<br>
+                        <code style="font-size:10px;word-break:break-all;">https://starlit-twilight-088274.netlify.app/.netlify/functions/aba-webhook</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR BOT SETTINGS -->
+            <div id="settings-qrbot" class="settings-panel">
+                <div style="border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;background:white;">
+                    <div style="font-size:13px;font-weight:700;color:#1a2744;margin-bottom:12px;">✈️ QR Bot ក្នុង Invoice</div>
+                    <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+                        <span style="font-size:12px;">បង្ហាញ QR Bot ក្នុង Invoice</span>
+                        <label style="cursor:pointer;display:flex;align-items:center;gap:6px;">
+                            <input type="checkbox" id="qrbot-enabled" onchange="saveQRBotSettings()"> ON
+                        </label>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">ទំហំ QR (px)</div>
+                        <select id="qrbot-size" onchange="saveQRBotSettings()" style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;background:white;">
+                            <option value="60">តូច (60px)</option>
+                            <option value="80" selected>មធ្យម (80px)</option>
+                            <option value="100">ធំ (100px)</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Caption Text</div>
+                        <input type="text" id="qrbot-caption" placeholder="✈️ Telegram" onchange="saveQRBotSettings()"
+                            style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;">
+                    </div>
+                    <button class="btn btn-success" onclick="saveQRBotSettings()" style="width:100%;">💾 រក្សាទុក</button>
                 </div>
             </div>
 
@@ -2371,6 +2458,7 @@
         <div id="receipt-content"></div>
         <div class="modal-footer no-print">
             <button class="btn btn-primary" onclick="printReceipt()"><i class="fas fa-print"></i> បោះពុម្ព</button>
+            <button class="btn btn-info" onclick="sendReceiptTelegramFromModal()" style="background:#0ea5e9;color:white;border:none;"><i class='fab fa-telegram'></i> Telegram</button>
             <button class="btn btn-secondary" onclick="closeModal('receipt-modal')">បិទ</button>
         </div>
     </div>
@@ -2935,6 +3023,9 @@ async function addUtilityAndGenerate() {
     invoices.push(newInv);
     await saveAllData();
     showNotification('success','✅','វិក្កយបត្រ '+invNum+' ត្រូវបានបង្កើត!');
+    // Auto Send Telegram
+    if (settings.telegram?.autoInvoice) setTimeout(()=>sendInvoiceTelegram(invId), 600);
+    if (settings.telegram?.autoUtility) setTimeout(()=>sendUtilityTelegramMsg(customer.id, newInv), 600);
     closeModal('add-utility-modal');
     showPage('billing');
     setTimeout(() => viewInvoice(invId), 300);
@@ -4926,38 +5017,59 @@ let editingServiceCustomerId = null;
 
 function saveAllData() {
     try {
-        localStorage.setItem('rooms', JSON.stringify(rooms));
-        localStorage.setItem('customers', JSON.stringify(customers));
-        localStorage.setItem('utilities', JSON.stringify(utilities));
-        localStorage.setItem('invoices', JSON.stringify(invoices));
-        localStorage.setItem('payments', JSON.stringify(payments));
+        // ✅ ពិនិត្យទំហំ localStorage
+        let dataSize = new Blob([
+            JSON.stringify(rooms), JSON.stringify(customers),
+            JSON.stringify(utilities), JSON.stringify(invoices),
+            JSON.stringify(payments), JSON.stringify(checkoutHistory),
+            JSON.stringify(deletedCustomers), JSON.stringify(roomPriceHistory)
+        ]).size;
+
+        if (dataSize > 4000000) {
+            let sixMonthsAgo = new Date();
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+            utilities = utilities.filter(u => new Date(u.date) > sixMonthsAgo);
+            payments  = payments.filter(p => new Date(p.date) > sixMonthsAgo);
+            invoices  = invoices.filter(i => {
+                if (i.status==='paid'||i.status==='settled') return new Date(i.createdAt) > sixMonthsAgo;
+                return true;
+            });
+            showNotification('info','🧹 សម្អាត','លុបទិន្នន័យចាស់ដើម្បីសន្សំទំហំ');
+        }
+
+        localStorage.setItem('rooms',           JSON.stringify(rooms));
+        localStorage.setItem('customers',        JSON.stringify(customers));
+        localStorage.setItem('utilities',        JSON.stringify(utilities));
+        localStorage.setItem('invoices',         JSON.stringify(invoices));
+        localStorage.setItem('payments',         JSON.stringify(payments));
         localStorage.setItem('checkoutHistory',  JSON.stringify(checkoutHistory));
         localStorage.setItem('deletedCustomers', JSON.stringify(deletedCustomers));
         localStorage.setItem('roomPriceHistory', JSON.stringify(roomPriceHistory));
         saveSettings();
     } catch(e) {
-        if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-            showNotification('error','⚠️ ទំហំពេញ','localStorage ពេញ! សូម Export ទិន្នន័យចេញជាមុន ហើយ Reset ប្រព័ន្ធ។');
-        } else {
-            console.error('saveAllData error:', e);
-        }
+        if (e.name==='QuotaExceededError'||e.name==='NS_ERROR_DOM_QUOTA_REACHED') {
+            showNotification('error','⚠️ ទំហំពេញ','សូម Export ទិន្នន័យ រួច Reset ប្រព័ន្ធ');
+        } else { console.error('saveAllData error:', e); }
     }
-    // ── Auto-render current active page ──
+
+    // ✅ Debounce Firestore Sync 3s
+    if (typeof saveToFirestore === 'function') {
+        clearTimeout(window._syncTimeout);
+        window._syncTimeout = setTimeout(() => { saveToFirestore(); }, 3000);
+    }
+
+    // ✅ Render តែទំព័រដែលកំពុងមើល
     try {
         let activePage = document.querySelector('.page.active');
         if (activePage) {
             let pid = activePage.id;
-            if (pid==='page-utility')    renderUtilityList();
-            if (pid==='page-dashboard')  renderDashboard();
-            if (pid==='page-rooms')      renderRooms();
-            if (pid==='page-customers')  renderCustomerList();
-            if (pid==='page-billing')    renderBillingList();
+            if (pid==='page-utility')   renderUtilityList();
+            if (pid==='page-dashboard') renderDashboard();
+            if (pid==='page-rooms')     renderRooms();
+            if (pid==='page-customers') renderCustomerList();
+            if (pid==='page-billing')   renderBillingList();
         }
     } catch(e){}
-    // ── Save to Firebase (async) ──
-    if (typeof saveToFirestore === 'function') {
-        setTimeout(() => saveToFirestore(), 200);
-    }
 }
 function saveSettings() { localStorage.setItem('app_settings', JSON.stringify(settings)); }
 
@@ -6676,6 +6788,7 @@ function renderDebtList() {
 
 async 
 function showReceipt(payId) {
+    window._viewingPayId = payId; // Store for Telegram send
     let p   = payments.find(p=>p.id===payId); if(!p) return;
     let inv = invoices.find(i=>i.id===p.invoiceId);
     let st  = inv ? getInvoiceStatus(inv) : 'paid';
@@ -6928,7 +7041,7 @@ function showReceipt(payId) {
     let _vSz2 = _v2.size || 72;
     let _vTxt = _v2.receiptText !== undefined ? _v2.receiptText : 'សូមរក្សាបង្កាន់ដៃជាភស្តុតាង';
     return '<div style="display:flex;align-items:center;gap:12px;padding:10px 24px;border-top:1px dashed #e2e8f0;margin-top:8px;">'
-        + '<img style="width:'+_vSz2+'px;height:'+_vSz2+'px;flex-shrink:0;" src="https://api.qrserver.com/v1/create-qr-code/?size='+(_vSz2*2)+'x'+(_vSz2*2)+'&data=https://rad-florentine-c47606.netlify.app/verify.html%3Finv%3D${inv.number}&color=1a2744&bgcolor=ffffff">'
+        + '<img style="width:'+_vSz2+'px;height:'+_vSz2+'px;flex-shrink:0;" src="https://api.qrserver.com/v1/create-qr-code/?size='+(_vSz2*2)+'x'+(_vSz2*2)+'&data=https://starlit-twilight-088274.netlify.app/verify.html%3Finv%3D${inv.number}&color=1a2744&bgcolor=ffffff">'
         + '<div style="font-size:10px;color:#64748b;line-height:1.7;">'
         + (_vTxt ? '<div style="font-weight:600;color:#1a2744;font-size:11px;margin-bottom:2px;">'+_vTxt+'</div>' : '')
         + '<div>'+(inv?inv.number:p.invoiceId)+' | '+(inv&&inv.createdAt?inv.createdAt.split('T')[0]:p.date)+'</div>'
@@ -7025,7 +7138,16 @@ function renderHistoryPrice() {
 function loadSettingsToUI() {
     document.getElementById('company-name').value=settings.owner.companyName||'';
     document.getElementById('owner-name').value=settings.owner.ownerName||'';
-    document.getElementById('owner-phone').value=settings.owner.phone||'';
+    document.getElementById('owner-phone')?.setAttribute('value', settings.owner.phone||'');
+    document.getElementById('owner-phone').value    = settings.owner.phone||'';
+    document.getElementById('owner-telegram').value = settings.owner.telegram||'';
+    document.getElementById('owner-facebook').value = settings.owner.facebook||'';
+    let _elIg = document.getElementById('owner-instagram'); if(_elIg) _elIg.value = settings.owner.instagram||'';
+    let _elTw = document.getElementById('owner-twitter');   if(_elTw) _elTw.value = settings.owner.twitter||'';
+    let _elTk = document.getElementById('owner-tiktok');    if(_elTk) _elTk.value = settings.owner.tiktok||'';
+    let _elYt = document.getElementById('owner-youtube');   if(_elYt) _elYt.value = settings.owner.youtube||'';
+    let _elWa = document.getElementById('owner-whatsapp');  if(_elWa) _elWa.value = settings.owner.whatsapp||'';
+    let _elWs = document.getElementById('owner-website');   if(_elWs) _elWs.value = settings.owner.website||'';
     let abaEl=document.getElementById('owner-aba'); if(abaEl) abaEl.value=(settings.owner && settings.owner.abaAccount ? settings.owner.abaAccount : '')||'';
     document.getElementById('owner-telegram').value=settings.owner.telegramLink||'';
     let fbEl=document.getElementById('owner-facebook'); if(fbEl) fbEl.value=settings.owner.facebookLink||'';
@@ -7065,11 +7187,21 @@ function showSettingsTab(tab) {
     if (tab==='template') renderTemplateGrid();
     if (tab==='qr')       renderQRBanksList();
     if (tab==='telegram')  loadTelegramSettings();
+    if (tab==='qrbot')     loadQRBotSettings();
+    if (tab==='aba')        {} // Coming Soon
 }
 function saveOwnerSettings() {
     settings.owner.companyName=document.getElementById('company-name').value;
     settings.owner.ownerName=document.getElementById('owner-name').value;
-    settings.owner.phone=document.getElementById('owner-phone').value;
+    settings.owner.phone     = document.getElementById('owner-phone')?.value||'';
+    settings.owner.telegram  = document.getElementById('owner-telegram')?.value||'';
+    settings.owner.facebook  = document.getElementById('owner-facebook')?.value||'';
+    settings.owner.instagram = document.getElementById('owner-instagram')?.value||'';
+    settings.owner.twitter   = document.getElementById('owner-twitter')?.value||'';
+    settings.owner.tiktok    = document.getElementById('owner-tiktok')?.value||'';
+    settings.owner.youtube   = document.getElementById('owner-youtube')?.value||'';
+    settings.owner.whatsapp  = document.getElementById('owner-whatsapp')?.value||'';
+    settings.owner.website   = document.getElementById('owner-website')?.value||'';
         let abaEl2=document.getElementById('owner-aba'); if(abaEl2) settings.owner.abaAccount=abaEl2.value;
     settings.owner.telegramLink=document.getElementById('owner-telegram').value;
     settings.owner.facebookLink=document.getElementById('owner-facebook')?.value||'';
@@ -8745,6 +8877,9 @@ async function addUtilityAndGenerate() {
     invoices.push(newInv);
     await saveAllData();
     showNotification('success','✅','វិក្កយបត្រ '+invNum+' ត្រូវបានបង្កើត!');
+    // Auto Send Telegram
+    if (settings.telegram?.autoInvoice) setTimeout(()=>sendInvoiceTelegram(invId), 600);
+    if (settings.telegram?.autoUtility) setTimeout(()=>sendUtilityTelegramMsg(customer.id, newInv), 600);
     closeModal('add-utility-modal');
     showPage('billing');
     setTimeout(() => viewInvoice(invId), 300);
@@ -11096,6 +11231,11 @@ function renderCustomerList() {
             }</td>
             <td>${fmtUSD(c.deposit)}</td>
             <td>${debt>0?`<span class="badge badge-unpaid hide-amount">ជំពាក់ ${fmtUSD(debt)}</span>`:'<span class="badge badge-paid">រួចរាល់</span>'}</td>
+            <td style="text-align:center;font-size:13px;">
+                ${c.telegramChatId
+                    ? `<div style="color:#16a34a;">✅</div><div style="font-size:10px;color:#64748b;">${c.telegramName||''}</div>`
+                    : `<span style="opacity:0.4;">❌</span>`}
+            </td>
             <td style="white-space:nowrap;">
                 <button class="btn btn-warning btn-sm" onclick="editCustomer('${c.id}')">✏️ កែ</button>
                 <button class="btn btn-info btn-sm" onclick="showEditCustomerServices('${c.id}')">📋 សេវា</button>
@@ -12977,25 +13117,22 @@ function viewInvoice(invId) {
   <!-- QR BANK + QR BOT TELEGRAM -->
   ${(()=>{
     let _tg = settings.telegram||{};
-    let _hasTG = !!(_tg.botToken);
-    let _botLink = _hasTG ? encodeURIComponent('https://t.me/putthai_rental_bot?start='+(inv.customerId||'')) : '';
-    let _botQR = _hasTG
-        ? '<div style="text-align:center;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;background:white;min-width:90px;">'
-            + '<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+_botLink+'&color=0ea5e9&bgcolor=ffffff" style="width:80px;height:80px;display:block;margin:0 auto 4px;border-radius:4px;">'
+    let _hasTG = !!(_tg.botToken) && (settings.qrBot?.enabled !== false);
+    let _custId = inv.customerId||'';
+    let _botQR = (_hasTG && _custId)
+        ? '<div style="text-align:center;border:1px solid #bae6fd;border-radius:10px;padding:8px 10px;background:#f0f9ff;min-width:90px;">'
+            + '<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent('https://t.me/putthai_rental_bot?start='+_custId)+'" style="width:80px;height:80px;display:block;margin:0 auto 4px;border-radius:4px;">'
             + '<div style="font-size:10px;font-weight:700;color:#0ea5e9;">✈️ Telegram</div>'
             + '<div style="font-size:9px;color:#64748b;">Scan → ភ្ជាប់</div>'
             + '</div>'
         : '';
-    if (!tQR && !_hasTG) return '';
+    if (!tQR && !_botQR) return '';
     let _align = settings.qrSettings&&settings.qrSettings.align==='left'?'flex-start':settings.qrSettings&&settings.qrSettings.align==='right'?'flex-end':'center';
-    let _items = '';
-    if (tQR && qrHtml) _items += qrHtml;
-    if (_botQR) _items += _botQR;
+    let _items = (tQR&&qrHtml?qrHtml:'') + _botQR;
     return '<div style="padding:0 28px 10px;"><div style="display:flex;gap:10px;justify-content:'+_align+';">'+_items+'</div></div>';
   })()}
-  ${tSig?'<div style="padding:0 28px 16px;text-align:right;"><div style="width:80px;height:1px;background:#94a3b8;margin:0 0 4px auto;"></div><div style="font-size:9px;color:#94a3b8;">ហត្ថលេខា</div></div>':''}
 
-    <!-- QR VERIFY — Controlled by Settings -->
+  <!-- QR VERIFY — Controlled by Settings -->
   ${(()=>{
     let v = (settings.qrSettings && settings.qrSettings.verify) || {};
     if (v.enabled === false) return '';
@@ -13005,7 +13142,7 @@ function viewInvoice(invId) {
     let vJustify = vAlign==='left'?'flex-start':vAlign==='right'?'flex-end':'center';
     return `<div style="border-top:1px dashed #e2e8f0;margin-top:10px;padding-top:8px;display:flex;flex-direction:column;align-items:${vJustify};">
       <img style="width:${vSize}px;height:${vSize}px;display:inline-block;"
-        src="https://api.qrserver.com/v1/create-qr-code/?size=${vSize*2}x${vSize*2}&data=https://rad-florentine-c47606.netlify.app/verify.html%3Finv%3D${inv.number}&color=1a2744&bgcolor=ffffff"
+        src="https://api.qrserver.com/v1/create-qr-code/?size=${vSize*2}x${vSize*2}&data=https://starlit-twilight-088274.netlify.app/verify.html%3Finv%3D${inv.number}&color=1a2744&bgcolor=ffffff"
         alt="QR" onerror="this.style.display='none'">
       ${vText ? '<div style="font-size:9px;color:#94a3b8;margin-top:3px;text-align:'+vAlign+';">'+vText+'</div>' : ''}
     </div>`;
@@ -13301,8 +13438,11 @@ async function confirmPayment() {
     showReceipt(payment.id);
     let statusMsg = newPaid >= inv.total ? '✅ វិក្កយបត្របង់រួច!' : '🟡 បង់ '+fmtUSD(actualPay)+' — នៅខ្វះ '+fmtUSD(Math.max(0,inv.total-newPaid));
     showNotification(newPaid>=inv.total?'success':'info', 'ការទូទាត់', statusMsg);
+    // Auto Send Telegram
+    if (settings.telegram?.autoReceipt) setTimeout(()=>sendReceiptTelegram(payment.id), 500);
 }
 function showReceipt(payId) {
+    window._viewingPayId = payId; // Store for Telegram send
     let p   = payments.find(p=>p.id===payId); if(!p) return;
     let inv = invoices.find(i=>i.id===p.invoiceId);
     let st  = inv ? getInvoiceStatus(inv) : 'paid';
@@ -13555,7 +13695,7 @@ function showReceipt(payId) {
     let _vSz2 = _v2.size || 72;
     let _vTxt = _v2.receiptText !== undefined ? _v2.receiptText : 'សូមរក្សាបង្កាន់ដៃជាភស្តុតាង';
     return '<div style="display:flex;align-items:center;gap:12px;padding:10px 24px;border-top:1px dashed #e2e8f0;margin-top:8px;">'
-        + '<img style="width:'+_vSz2+'px;height:'+_vSz2+'px;flex-shrink:0;" src="https://api.qrserver.com/v1/create-qr-code/?size='+(_vSz2*2)+'x'+(_vSz2*2)+'&data=https://rad-florentine-c47606.netlify.app/verify.html%3Finv%3D${inv.number}&color=1a2744&bgcolor=ffffff">'
+        + '<img style="width:'+_vSz2+'px;height:'+_vSz2+'px;flex-shrink:0;" src="https://api.qrserver.com/v1/create-qr-code/?size='+(_vSz2*2)+'x'+(_vSz2*2)+'&data=https://starlit-twilight-088274.netlify.app/verify.html%3Finv%3D${inv.number}&color=1a2744&bgcolor=ffffff">'
         + '<div style="font-size:10px;color:#64748b;line-height:1.7;">'
         + (_vTxt ? '<div style="font-weight:600;color:#1a2744;font-size:11px;margin-bottom:2px;">'+_vTxt+'</div>' : '')
         + '<div>'+(inv?inv.number:p.invoiceId)+' | '+(inv&&inv.createdAt?inv.createdAt.split('T')[0]:p.date)+'</div>'
@@ -13905,6 +14045,8 @@ async function confirmCheckout() {
     let tomorrowStr = (()=>{ let d=new Date(checkoutDate); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
     showNotification('success','ចាកចេញដោយជោគជ័យ',
         `${c.name} ចាកចេញរួចរាល់! 🧹 បន្ទប់ ${room?room.number:''} ទំនេរ ថ្ងៃ ${tomorrowStr}`);
+    // Auto Send Telegram
+    if (settings.telegram?.autoCheckout && typeof checkoutInvId !== 'undefined') setTimeout(()=>sendInvoiceTelegram(checkoutInvId), 600);
     loadCheckoutCustomers(); renderDashboard();
 }
 
@@ -14250,7 +14392,16 @@ function renderHistoryPrice() {
 function loadSettingsToUI() {
     document.getElementById('company-name').value=settings.owner.companyName||'';
     document.getElementById('owner-name').value=settings.owner.ownerName||'';
-    document.getElementById('owner-phone').value=settings.owner.phone||'';
+    document.getElementById('owner-phone')?.setAttribute('value', settings.owner.phone||'');
+    document.getElementById('owner-phone').value    = settings.owner.phone||'';
+    document.getElementById('owner-telegram').value = settings.owner.telegram||'';
+    document.getElementById('owner-facebook').value = settings.owner.facebook||'';
+    let _elIg = document.getElementById('owner-instagram'); if(_elIg) _elIg.value = settings.owner.instagram||'';
+    let _elTw = document.getElementById('owner-twitter');   if(_elTw) _elTw.value = settings.owner.twitter||'';
+    let _elTk = document.getElementById('owner-tiktok');    if(_elTk) _elTk.value = settings.owner.tiktok||'';
+    let _elYt = document.getElementById('owner-youtube');   if(_elYt) _elYt.value = settings.owner.youtube||'';
+    let _elWa = document.getElementById('owner-whatsapp');  if(_elWa) _elWa.value = settings.owner.whatsapp||'';
+    let _elWs = document.getElementById('owner-website');   if(_elWs) _elWs.value = settings.owner.website||'';
     let abaEl=document.getElementById('owner-aba'); if(abaEl) abaEl.value=(settings.owner && settings.owner.abaAccount ? settings.owner.abaAccount : '')||'';
     document.getElementById('owner-telegram').value=settings.owner.telegramLink||'';
     let fbEl=document.getElementById('owner-facebook'); if(fbEl) fbEl.value=settings.owner.facebookLink||'';
@@ -14290,11 +14441,21 @@ function showSettingsTab(tab) {
     if (tab==='template') renderTemplateGrid();
     if (tab==='qr')       renderQRBanksList();
     if (tab==='telegram')  loadTelegramSettings();
+    if (tab==='qrbot')     loadQRBotSettings();
+    if (tab==='aba')        {} // Coming Soon
 }
 function saveOwnerSettings() {
     settings.owner.companyName=document.getElementById('company-name').value;
     settings.owner.ownerName=document.getElementById('owner-name').value;
-    settings.owner.phone=document.getElementById('owner-phone').value;
+    settings.owner.phone     = document.getElementById('owner-phone')?.value||'';
+    settings.owner.telegram  = document.getElementById('owner-telegram')?.value||'';
+    settings.owner.facebook  = document.getElementById('owner-facebook')?.value||'';
+    settings.owner.instagram = document.getElementById('owner-instagram')?.value||'';
+    settings.owner.twitter   = document.getElementById('owner-twitter')?.value||'';
+    settings.owner.tiktok    = document.getElementById('owner-tiktok')?.value||'';
+    settings.owner.youtube   = document.getElementById('owner-youtube')?.value||'';
+    settings.owner.whatsapp  = document.getElementById('owner-whatsapp')?.value||'';
+    settings.owner.website   = document.getElementById('owner-website')?.value||'';
         let abaEl2=document.getElementById('owner-aba'); if(abaEl2) settings.owner.abaAccount=abaEl2.value;
     settings.owner.telegramLink=document.getElementById('owner-telegram').value;
     settings.owner.facebookLink=document.getElementById('owner-facebook')?.value||'';
@@ -15081,6 +15242,16 @@ function saveEditCustomer() {
         room.electricMeter= elec;
     }
 
+    // Save Telegram fields
+    let tgEl2 = document.getElementById('edit-cust-telegram');
+    if (tgEl2 && tgEl2.value.trim()) cust.telegramChatId = tgEl2.value.trim();
+    let el2 = id => document.getElementById(id);
+    cust.telegramPref = {
+        invoice:  el2('edit-tg-invoice')  ? el2('edit-tg-invoice').checked  : true,
+        receipt:  el2('edit-tg-receipt')  ? el2('edit-tg-receipt').checked  : true,
+        utility:  el2('edit-tg-utility')  ? el2('edit-tg-utility').checked  : true,
+        checkout: el2('edit-tg-checkout') ? el2('edit-tg-checkout').checked : true,
+    };
     saveAllData();
     closeModal('edit-customer-modal');
     renderCustomerList();
@@ -15412,6 +15583,29 @@ window.saveEditCustomer  = saveEditCustomer;
             <label>📝 ចំណាំ (Notes)</label>
             <textarea id="edit-cust-notes" rows="2" placeholder="ចំណាំ..."></textarea>
         </div>
+        <div class="form-group">
+            <label>📱 Telegram ChatID</label>
+            <input type="text" id="edit-cust-telegram" placeholder="ឧ. 2079207099"
+                style="font-family:monospace;font-size:12px;">
+            <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Auto Fill ពេល Customer Scan QR ✅</div>
+        </div>
+        <div class="form-group">
+            <label>✈️ Telegram Notifications</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+                    <input type="checkbox" id="edit-tg-invoice"> 📄 Invoice
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+                    <input type="checkbox" id="edit-tg-receipt"> 🧾 Receipt
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+                    <input type="checkbox" id="edit-tg-utility"> 💧 Utility
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+                    <input type="checkbox" id="edit-tg-checkout"> 🚪 Checkout
+                </label>
+            </div>
+        </div>
         <div class="modal-footer">
             <button class="btn btn-success" onclick="saveEditCustomer()">
                 <i class="fas fa-save"></i> រក្សាទុក
@@ -15655,7 +15849,7 @@ window.saveEditCustomer  = saveEditCustomer;
         <div style="padding:16px;text-align:center;">
             <div id="bot-qr-customer-info" style="margin-bottom:14px;"></div>
             <div id="bot-qr-image" style="display:flex;justify-content:center;margin-bottom:12px;">
-                <canvas id="bot-qr-canvas"></canvas>
+                <div id="bot-qr-canvas"></div>
             </div>
             <div id="bot-qr-link" style="font-size:11px;color:#64748b;word-break:break-all;margin-bottom:12px;padding:8px;background:#f8fafc;border-radius:8px;"></div>
             <div style="font-size:12px;color:#475569;margin-bottom:14px;">
@@ -15665,6 +15859,74 @@ window.saveEditCustomer  = saveEditCustomer;
                 <button class="btn btn-primary" onclick="printBotQR()" style="flex:1;">🖨️ Print</button>
                 <button class="btn btn-secondary" onclick="closeModal('bot-qr-modal')" style="flex:1;">បិទ</button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- PIN Enter Modal -->
+<div id="pin-prompt-modal" class="modal">
+    <div class="modal-content" style="max-width:300px;">
+        <div class="modal-header"><h2>🔒 វាយ PIN</h2>
+            <span class="modal-close" onclick="closeModal('pin-prompt-modal')">&times;</span>
+        </div>
+        <div style="padding:16px;text-align:center;">
+            <input type="password" id="pin-enter-input" maxlength="6" placeholder="••••"
+                style="width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:24px;text-align:center;letter-spacing:8px;font-family:monospace;margin-bottom:8px;"
+                onkeydown="if(event.key==='Enter')pinConfirm()">
+            <div id="pin-enter-error" style="color:#dc2626;font-size:11px;min-height:16px;margin-bottom:8px;"></div>
+            <div style="display:flex;gap:8px;">
+                <button class="btn btn-primary" onclick="pinConfirm()" style="flex:1;">✅ OK</button>
+                <button class="btn btn-secondary" onclick="closeModal('pin-prompt-modal')" style="flex:1;">បិទ</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Set PIN Modal -->
+<div id="set-pin-modal" class="modal">
+    <div class="modal-content" style="max-width:300px;">
+        <div class="modal-header"><h2>🔐 Set PIN</h2>
+            <span class="modal-close" onclick="closeModal('set-pin-modal')">&times;</span>
+        </div>
+        <div style="padding:16px;">
+            <div style="margin-bottom:8px;">
+                <div style="font-size:11px;color:#64748b;margin-bottom:4px;">PIN ថ្មី (4-6 digits)</div>
+                <input type="password" id="pin-set-new" maxlength="6" placeholder="••••"
+                    style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:20px;text-align:center;letter-spacing:6px;font-family:monospace;">
+            </div>
+            <div style="margin-bottom:8px;">
+                <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Confirm PIN</div>
+                <input type="password" id="pin-set-confirm" maxlength="6" placeholder="••••"
+                    style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:20px;text-align:center;letter-spacing:6px;font-family:monospace;">
+            </div>
+            <div id="pin-set-error" style="color:#dc2626;font-size:11px;min-height:16px;margin-bottom:8px;"></div>
+            <button class="btn btn-success" onclick="pinSetConfirm()" style="width:100%;">💾 Save PIN</button>
+        </div>
+    </div>
+</div>
+<!-- Change PIN Modal -->
+<div id="change-pin-modal" class="modal">
+    <div class="modal-content" style="max-width:300px;">
+        <div class="modal-header"><h2>🔄 Change PIN</h2>
+            <span class="modal-close" onclick="closeModal('change-pin-modal')">&times;</span>
+        </div>
+        <div style="padding:16px;">
+            <div style="margin-bottom:8px;">
+                <div style="font-size:11px;color:#64748b;margin-bottom:4px;">PIN ចាស់</div>
+                <input type="password" id="pin-chg-old" maxlength="6" placeholder="••••"
+                    style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:20px;text-align:center;letter-spacing:6px;font-family:monospace;">
+            </div>
+            <div style="margin-bottom:8px;">
+                <div style="font-size:11px;color:#64748b;margin-bottom:4px;">PIN ថ្មី</div>
+                <input type="password" id="pin-chg-new" maxlength="6" placeholder="••••"
+                    style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:20px;text-align:center;letter-spacing:6px;font-family:monospace;">
+            </div>
+            <div style="margin-bottom:8px;">
+                <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Confirm PIN ថ្មី</div>
+                <input type="password" id="pin-chg-confirm" maxlength="6" placeholder="••••"
+                    style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:20px;text-align:center;letter-spacing:6px;font-family:monospace;">
+            </div>
+            <div id="pin-chg-error" style="color:#dc2626;font-size:11px;min-height:16px;margin-bottom:8px;"></div>
+            <button class="btn btn-success" onclick="pinChgConfirm()" style="width:100%;">💾 Save</button>
         </div>
     </div>
 </div>
@@ -15850,13 +16112,90 @@ auth.onAuthStateChanged(async function(user) {
 
         // Load data from Firestore
         await loadFromFirestore();
+
+        // ── Sync telegram_links → customers ──
+        try {
+            const tgSnap = await db.collection('telegram_links').get();
+            tgSnap.docs.forEach(doc => {
+                const d = doc.data();
+                if (!d.custId || !d.chatId) return;
+                const cust = customers.find(c =>
+                    c.id === d.custId ||
+                    c.id === 'cust_' + d.custId ||
+                    (c.id && c.id.replace('cust_','') === String(d.custId).replace('cust_',''))
+                );
+                if (cust && !cust.telegramChatId) {
+                    cust.telegramChatId = String(d.chatId);
+                    if (d.firstName) cust.telegramName = d.firstName;
+                }
+            });
+            renderCustomerList();
+        } catch(e) { console.warn('TG sync error:', e); }
+
         // ── Real-time listener: Auto-refresh when Mobile App sends meter data ──
         if (window._firestoreUnsubscribe) window._firestoreUnsubscribe();
         let OWNER_UID = 'vnS4H9c5HBOvBqUxUKpTqho0aMt2';
+        window._lastDataHash = '';
+        window._renderTimeout = null;
+        window._tgCache = null; // Clear cache on login
+
+        // ── Load telegram names on startup ──
+        db.collection('telegram_links').get().then(snap => {
+            snap.docs.forEach(doc => {
+                let d = doc.data();
+                if (!d.custId || !d.chatId) return;
+                let cust = customers.find(c => {
+                    if (!c.id) return false;
+                    let cid = c.id.replace('cust_','');
+                    let did = String(d.custId||'').replace('cust_','');
+                    return c.id===d.custId || c.id==='cust_'+d.custId ||
+                           cid===did || cid.includes(did) || did.includes(cid);
+                });
+                if (cust) {
+                    cust.telegramChatId = String(d.chatId);
+                    if (d.firstName) cust.telegramName = d.firstName;
+                }
+            });
+            renderCustomerList();
+        }).catch(()=>{});
+
+        // ── Listen telegram_links → Auto Sync ChatID ──
+        if (window._tgLinksUnsub) window._tgLinksUnsub();
+        window._tgLinksUnsub = db.collection('telegram_links').onSnapshot(snap => {
+            snap.docChanges().forEach(change => {
+                if (change.type === 'added' || change.type === 'modified') {
+                    let d = change.doc.data();
+                    if (!d.custId || !d.chatId) return;
+                    // Update cache
+                    if (!window._tgCache) window._tgCache = { t: Date.now(), d: {} };
+                    window._tgCache.d[d.custId] = d.chatId;
+                    // Update customer object
+                    // Match custId with or without "cust_" prefix
+                    let cust = customers.find(c => {
+                        if (!c.id) return false;
+                        let cid = c.id.replace('cust_','');
+                        let did = String(d.custId||'').replace('cust_','');
+                        return c.id===d.custId || c.id==='cust_'+d.custId ||
+                               cid===did || cid.includes(did) || did.includes(cid);
+                    });
+                    if (cust) {
+                        cust.telegramChatId = String(d.chatId);
+                        if (d.firstName) cust.telegramName = d.firstName;
+                        saveAllData();
+                        renderCustomerList();
+                    }
+                }
+            });
+        });
+
         window._firestoreUnsubscribe = db.collection('users').doc(OWNER_UID)
             .onSnapshot(snap => {
                 if (!snap.exists || isSyncing) return;
                 let d = snap.data();
+                // Hash check — ប្រើ lastUpdated seconds
+                let currentHash = d.lastUpdated ? d.lastUpdated.seconds : JSON.stringify({u:(d.utilities||[]).length,i:(d.invoices||[]).length,p:(d.payments||[]).length,c:(d.customers||[]).length,r:(d.rooms||[]).length});
+                if (currentHash === window._lastDataHash) return;
+                window._lastDataHash = currentHash;
                 // Only auto-refresh if mobile app updated (not our own save)
                 let lastEntry = d.lastMeterEntry;
                 // Guard: use sentAt + by to prevent double processing
@@ -16062,8 +16401,17 @@ function _saveToLocalStorageOnly() {
 }
 
 // ── Save to Firestore (called after every saveAllData) ──
+let _lastFirestoreSave = 0;
+
 async function saveToFirestore() {
-    if (!currentUser || isSyncing) return;
+    if (!currentUser) return;
+    let now = Date.now();
+    if (now - _lastFirestoreSave < 5000) {
+        clearTimeout(window._saveQueue);
+        window._saveQueue = setTimeout(() => saveToFirestore(), 5000);
+        return;
+    }
+    _lastFirestoreSave = now;
     isSyncing = true;
     setSyncStatus('☁️ កំពុង Save...');
     let uid = currentUser.uid;
@@ -16886,14 +17234,26 @@ function loadTelegramSettings() {
     let tg = settings.telegram || {};
     let tokenEl = document.getElementById('tg-bot-token');
     let chatEl  = document.getElementById('tg-admin-chatid');
-    if (tokenEl) tokenEl.value = tg.botToken || '';
-    if (chatEl)  chatEl.value  = tg.adminChatId || '';
+    if (tokenEl) { tokenEl.value = tg.botToken || ''; tokenEl.type = 'password'; }
+    if (chatEl)  { chatEl.value  = tg.adminChatId || ''; chatEl.type = 'password'; }
+    document.querySelectorAll('[onclick*="showPinPrompt"]').forEach(function(b){b.textContent='🔒';});
+    if (typeof _puiStatus === 'function') _puiStatus();
+    if (typeof _loadPinFromFirebase === 'function') _loadPinFromFirebase();
+    let el = id => document.getElementById(id);
+    if (el('tg-auto-invoice'))  el('tg-auto-invoice').checked  = tg.autoInvoice  !== false;
+    if (el('tg-auto-receipt'))  el('tg-auto-receipt').checked  = tg.autoReceipt  !== false;
+    if (el('tg-auto-utility'))  el('tg-auto-utility').checked  = tg.autoUtility  !== false;
+    if (el('tg-auto-checkout')) el('tg-auto-checkout').checked = tg.autoCheckout !== false;
 }
 
 function saveTelegramSettings() {
     if (!settings.telegram) settings.telegram = {};
     settings.telegram.botToken    = document.getElementById('tg-bot-token')?.value.trim() || '';
     settings.telegram.adminChatId = document.getElementById('tg-admin-chatid')?.value.trim() || '';
+    settings.telegram.autoInvoice  = !!(document.getElementById('tg-auto-invoice')?.checked);
+    settings.telegram.autoReceipt  = !!(document.getElementById('tg-auto-receipt')?.checked);
+    settings.telegram.autoUtility  = !!(document.getElementById('tg-auto-utility')?.checked);
+    settings.telegram.autoCheckout = !!(document.getElementById('tg-auto-checkout')?.checked);
     saveSettings();
     if (currentUser && db) {
         db.collection('users').doc('vnS4H9c5HBOvBqUxUKpTqho0aMt2')
@@ -16907,6 +17267,7 @@ async function sendTelegramMessage(chatId, text) {
     let token = settings.telegram?.botToken;
     if (!token || !chatId) return false;
     try {
+        console.log('[TG] sendTelegramMessage chatId:', chatId, 'type:', typeof chatId);
         let res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
@@ -16980,15 +17341,40 @@ async function sendTelegramBroadcast() {
 async function sendInvoiceTelegram(invId) {
     let inv = invoices.find(i=>i.id===invId); if (!inv) return;
     let cust = customers.find(c=>c.id===inv.customerId);
-    let chatId = cust?.telegramChatId || settings.telegram?.adminChatId;
-    if (!chatId) { showNotification('warning','','គ្មាន Telegram ChatID'); return; }
+    let chatId = cust?.telegramChatId || null;
+
+    // Firestore fallback
+    if (!chatId && db && inv.customerId) {
+        try {
+            // Cache telegram_links (5 min)
+            let _now = Date.now();
+            if (!window._tgCache || (_now-window._tgCache.t)>300000) {
+                let _s = await db.collection('telegram_links').get();
+                window._tgCache = {t:_now, d:{}};
+                _s.docs.forEach(d=>{ let x=d.data(); if(x.custId) window._tgCache.d[x.custId]=x.chatId; });
+            }
+            // Match with or without "cust_" prefix
+            let _cid = inv.customerId || '';
+            chatId = window._tgCache.d[_cid]
+                  || window._tgCache.d[_cid.replace('cust_','')]
+                  || window._tgCache.d['cust_'+_cid]
+                  || null;
+            if (chatId && cust) cust.telegramChatId = String(chatId);
+        } catch(e) { console.error('[TG] Error:', e.message); }
+    }
+
+    if (!chatId) {
+        showNotification('warning','⚠️','Customer មិនទាន់ភ្ជាប់ Telegram — Scan QR Bot ជាមុន');
+        return;
+    }
+    console.log('[TG] Sending to chatId:', chatId);
     let msg = `📄 វិក្កយបត្រ ${inv.number}
 ` +
               `👤 ${inv.customerName} | 🏠 ${inv.roomNumber}
 ` +
               `📅 ខែ: ${inv.month}
 ` +
-              `💰 សរុប: $${inv.total}
+              `💰 សរុប: $${parseFloat(inv.total||0).toFixed(2)}
 ` +
               `⚠️ Status: ${inv.status==='paid'?'✅ បង់រួច':'🔴 មិនទាន់បង់'}
 
@@ -17005,22 +17391,19 @@ async function sendReceiptTelegram(paymentId) {
     let cust = inv ? customers.find(c=>c.id===inv.customerId) : null;
     let chatId = cust?.telegramChatId || settings.telegram?.adminChatId;
     if (!chatId) return;
-    let msg = `✅ ទូទាត់រួចហើយ!
+    // Calculate remaining balance
+    let totalPaid = payments.filter(x=>x.invoiceId===p.invoiceId).reduce((s,x)=>s+(x.amount||0),0);
+    let remaining = inv ? Math.max(0, inv.total - totalPaid) : 0;
+    let isPaidFull = inv ? inv.status === 'paid' : remaining === 0;
 
-` +
-              `👤 ${p.customerName}
-` +
-              `💰 $${p.amount}
-` +
-              `🧾 ${p.receiptNumber}
-` +
-              `📅 ${p.date} ${p.time||''}
-` +
-              `💳 ${p.method||'cash'}
-
-` +
-              `🙏 សូមអរគុណ!
-🏠 PUTTHAI Rental`;
+    let msg = (isPaidFull ? '✅ ទូទាត់រួចពេញ!' : '🟡 ទូទាត់មួយផ្នែក!') + '\n\n' +
+              '👤 ' + p.customerName + '\n' +
+              '💰 បានបង់: $' + parseFloat(p.amount||0).toFixed(2) + '\n' +
+              (remaining > 0 ? '⚠️ នៅខ្វះ: $' + remaining.toFixed(2) + '\n' : '') +
+              '🧾 ' + p.receiptNumber + '\n' +
+              '📅 ' + p.date + ' ' + (p.time||'') + '\n' +
+              '💳 ' + (p.method||'cash') + '\n\n' +
+              (isPaidFull ? '🙏 សូមអរគុណ!' : '📅 សូមបង់ប្រាក់ដែលនៅខ្វះ!') + '\n🏠 PUTTHAI Rental';
     await sendTelegramMessage(chatId, msg);
 }
 
@@ -17054,12 +17437,11 @@ function showBotQR(custId) {
     let linkEl = document.getElementById('bot-qr-link');
     if (linkEl) linkEl.textContent = link;
 
-    // Generate QR
+    // Generate QR using img tag (reliable)
     let canvas = document.getElementById('bot-qr-canvas');
-    if (canvas && typeof QRCode !== 'undefined') {
-        QRCode.toCanvas(canvas, link, { width: 200, margin: 2 }, function(err) {
-            if (err) console.error(err);
-        });
+    if (canvas) {
+        let encodedLink = encodeURIComponent(link);
+        canvas.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodedLink + '" style="width:200px;height:200px;border-radius:8px;">';
     }
 
     window._botQRLink = link;
@@ -17094,4 +17476,227 @@ function printBotQR() {
 
 window.showBotQR = showBotQR;
 window.printBotQR = printBotQR;
+
+async function sendUtilityTelegramMsg(custId, inv) {
+    let chatId = await getTelegramChatId(custId);
+    if (!chatId) return;
+    let util = inv ? utilities.find(u=>u.id===inv.utilRecordId) : null;
+    let nl = '\n';
+    let msg = '💧⚡ ប្រើប្រាស់ទឹក-ភ្លើង' + nl;
+    if (util) {
+        msg += '💧 ទឹក: '+(util.waterStart||0)+' to '+(util.waterEnd||0)+' = '+((util.waterEnd||0)-(util.waterStart||0))+' m3'+nl;
+        msg += '⚡ ភ្លើង: '+(util.electricStart||0)+' to '+(util.electricEnd||0)+' = '+((util.electricEnd||0)-(util.electricStart||0))+' kWh'+nl;
+    }
+    if (inv) { msg += '💰 $'+parseFloat(inv.total||0).toFixed(2)+nl+'📅 '+inv.month+nl; }
+    msg += nl+'🏠 PUTTHAI Rental';
+    await sendTelegramMessage(Number(chatId)||chatId, msg);
+}
+
+async function getTelegramChatId(custId) {
+    if (!custId) return null;
+    let cust = customers.find(c=>c.id===custId);
+    if (cust?.telegramChatId) return cust.telegramChatId;
+    if (!db) return null;
+    try {
+        let now = Date.now();
+        if (!window._tgCache || (now-window._tgCache.t)>300000) {
+            let s = await db.collection('telegram_links').get();
+            window._tgCache = {t:now, d:{}};
+            s.docs.forEach(d=>{ let x=d.data(); if(x.custId) window._tgCache.d[x.custId]=x.chatId; });
+        }
+        let cid = custId;
+        return window._tgCache.d[cid]||window._tgCache.d[cid.replace('cust_','')]||window._tgCache.d['cust_'+cid]||null;
+    } catch(e) { return null; }
+}
+window.sendUtilityTelegramMsg = sendUtilityTelegramMsg;
+window.getTelegramChatId = getTelegramChatId;
+
+// ── Toggle token/chatid visibility ──
+function toggleTgField(id, btn) {
+    let el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'password') { el.type = 'text'; btn.textContent = '🙈'; }
+    else { el.type = 'password'; btn.textContent = '👁️'; }
+}
+
+// ── Save QR Bot Settings ──
+function saveQRBotSettings() {
+    if (!settings.qrBot) settings.qrBot = {};
+    settings.qrBot.enabled  = !!(document.getElementById('qrbot-enabled')?.checked);
+    settings.qrBot.size     = parseInt(document.getElementById('qrbot-size')?.value||'80');
+    settings.qrBot.caption  = document.getElementById('qrbot-caption')?.value || '✈️ Telegram';
+    saveSettings();
+    showNotification('success','✅','QR Bot Settings saved');
+}
+
+// ── Load QR Bot Settings ──
+function loadQRBotSettings() {
+    let qb = settings.qrBot || {};
+    let el = id => document.getElementById(id);
+    if (el('qrbot-enabled')) el('qrbot-enabled').checked = qb.enabled !== false;
+    if (el('qrbot-size'))    el('qrbot-size').value      = qb.size || '80';
+    if (el('qrbot-caption')) el('qrbot-caption').value   = qb.caption || '✈️ Telegram';
+}
+
+// ── Send Receipt from Modal ──
+async function sendReceiptTelegramFromModal() {
+    let payId = window._viewingPayId;
+    if (!payId) { showNotification('warning','⚠️','PayID រក មិនឃើញ'); return; }
+    showNotification('info','⏳','កំពុង ផ្ញើ...');
+    let p = payments.find(x=>x.id===payId);
+    let inv = p ? invoices.find(i=>i.id===p.invoiceId) : null;
+    let custId = inv?.customerId;
+    let chatId = await getTelegramChatId(custId);
+    if (!chatId) { showNotification('warning','⚠️','Customer មិនទាន់ភ្ជាប់ Telegram'); return; }
+    let nl = '\n';
+    let msg = '🧾 បង្កាន់ដៃ' + nl;
+    if (p) {
+        msg += '👤 ' + (p.customerName||'') + nl;
+        msg += '💰 $' + parseFloat(p.amount||0).toFixed(2) + nl;
+        msg += '🧾 ' + (p.receiptNumber||'-') + nl;
+        msg += '📅 ' + (p.date||'') + ' ' + (p.time||'') + nl;
+    }
+    msg += nl + '🙏 សូមអរគុណ!' + nl + '🏠 PUTTHAI Rental';
+    let ok = await sendTelegramMessage(Number(chatId)||chatId, msg);
+    showNotification(ok?'success':'error', ok?'✅':'❌', ok?'ផ្ញើ Telegram ✅':'ផ្ញើ Telegram ❌');
+}
+
+// ── Check per-customer pref ──
+function custWantsTg(custId, type) {
+    let cust = customers.find(c=>c.id===custId);
+    if (!cust) return true;
+    if (!cust.telegramChatId) return false;
+    let pref = cust.telegramPref;
+    if (!pref) return true;
+    return pref[type] !== false;
+}
+
+window.toggleTgField = toggleTgField;
+window.saveQRBotSettings = saveQRBotSettings;
+window.loadQRBotSettings = loadQRBotSettings;
+window.sendReceiptTelegramFromModal = sendReceiptTelegramFromModal;
+window.custWantsTg = custWantsTg;
+
+// ── PIN System ──
+var _PIN_KEY = 'tg_pin';
+var _pinHide = null;
+
+function _ph(p) { var h=0; for(var i=0;i<p.length;i++){h=((h<<5)-h)+p.charCodeAt(i);h|=0;} return String(h); }
+function _pg() {
+    var ls = localStorage.getItem(_PIN_KEY)||'';
+    if (ls) return ls;
+    // Fallback: check settings object (loaded from Firebase)
+    var fbPin = settings?.telegram?.pin || '';
+    if (fbPin) { localStorage.setItem(_PIN_KEY, fbPin); return fbPin; }
+    return '';
+}
+function _ps(p) { localStorage.setItem(_PIN_KEY, _ph(p)); _puiStatus(); }
+
+function _loadPinFromFirebase() {
+    if (!currentUser || !db) return;
+    db.collection('users').doc(currentUser.uid).get().then(function(doc) {
+        if (doc.exists) {
+            var fbPin = doc.data()?.settings?.telegram?.pin;
+            if (fbPin && !_pg()) {
+                localStorage.setItem(_PIN_KEY, fbPin);
+                if (typeof _puiStatus === 'function') _puiStatus();
+                console.log('[PIN] Loaded from Firebase ✅');
+            }
+        }
+    }).catch(function(){});
+}
+window._loadPinFromFirebase = _loadPinFromFirebase;
+
+function _puiStatus() {
+    var el = document.getElementById('tg-pin-status');
+    if (!el) return;
+    el.innerHTML = _pg() ? '<span style="color:#16a34a;">✅ PIN Set រួចហើយ</span>' : '<span style="color:#f59e0b;">⚠️ PIN មិនទាន់ Set</span>';
+}
+
+function pinShowSet() {
+    if (_pg()) { showNotification('warning','⚠️','PIN Set ហើយ — ប្រើ Change PIN'); return; }
+    var e1=document.getElementById('pin-set-new'), e2=document.getElementById('pin-set-confirm');
+    if(e1) e1.value=''; if(e2) e2.value='';
+    var er=document.getElementById('pin-set-error'); if(er) er.textContent='';
+    showModal('set-pin-modal');
+    setTimeout(function(){var e=document.getElementById('pin-set-new');if(e)e.focus();},200);
+}
+window.pinShowSet = pinShowSet;
+
+function showPinPrompt(fid, btn) {
+    if (!_pg()) { showModal('set-pin-modal'); setTimeout(function(){var e=document.getElementById('pin-set-new');if(e)e.focus();},200); return; }
+    window._pinFid = fid;
+    var inp = document.getElementById('pin-enter-input');
+    if (inp) inp.value = '';
+    var err = document.getElementById('pin-enter-error');
+    if (err) err.textContent = '';
+    showModal('pin-prompt-modal');
+    setTimeout(function(){ var e=document.getElementById('pin-enter-input'); if(e) e.focus(); }, 200);
+}
+
+function pinConfirm() {
+    var val = (document.getElementById('pin-enter-input')?.value||'').trim();
+    var err = document.getElementById('pin-enter-error');
+    if (!val) { if(err) err.textContent='សូមវាយ PIN'; return; }
+    if (_ph(val) !== _pg()) { if(err) err.textContent='❌ PIN ខុស!'; document.getElementById('pin-enter-input').value=''; return; }
+    closeModal('pin-prompt-modal');
+    // Show BOTH fields
+    ['tg-bot-token','tg-admin-chatid'].forEach(function(id){
+        var f=document.getElementById(id); if(f) f.type='text';
+    });
+    var lb=document.getElementById('tg-lock-btn'); if(lb) lb.textContent='🔓';
+    if (_pinHide) clearTimeout(_pinHide);
+    _pinHide = setTimeout(function(){
+        ['tg-bot-token','tg-admin-chatid'].forEach(function(id){var f=document.getElementById(id);if(f)f.type='password';});
+        var lb=document.getElementById('tg-lock-btn'); if(lb) lb.textContent='🔒';
+    }, 30000);
+}
+
+function pinSetConfirm() {
+    var p1 = (document.getElementById('pin-set-new')?.value||'').trim();
+    var p2 = (document.getElementById('pin-set-confirm')?.value||'').trim();
+    var err = document.getElementById('pin-set-error');
+    if (p1.length < 4) { if(err) err.textContent='PIN ត្រូវ 4+ digits!'; return; }
+    if (p1 !== p2) { if(err) err.textContent='PIN មិនដូចគ្នា!'; return; }
+    var hash = _ph(p1);
+    localStorage.setItem(_PIN_KEY, hash);
+    // Save to Firebase
+    if (currentUser && db) {
+        db.collection('users').doc(currentUser.uid)
+            .update({'settings.telegram.pin': hash})
+            .then(function(){ console.log('[PIN] Saved to Firebase ✅'); })
+            .catch(function(e){ console.warn('[PIN] Firebase save error:', e); });
+    }
+    if (typeof _puiStatus === 'function') _puiStatus();
+    closeModal('set-pin-modal');
+    showNotification('success','🔐','PIN Set ជោគជ័យ!');
+}
+
+function pinChgConfirm() {
+    var old_ = (document.getElementById('pin-chg-old')?.value||'').trim();
+    var new_ = (document.getElementById('pin-chg-new')?.value||'').trim();
+    var cfm_ = (document.getElementById('pin-chg-confirm')?.value||'').trim();
+    var err = document.getElementById('pin-chg-error');
+    if (_ph(old_) !== _pg()) { if(err) err.textContent='PIN ចាស់ខុស!'; return; }
+    if (new_.length < 4) { if(err) err.textContent='PIN ថ្មី ត្រូវ 4+ digits!'; return; }
+    if (new_ !== cfm_) { if(err) err.textContent='PIN ថ្មី មិនដូចគ្នា!'; return; }
+    var hash = _ph(new_);
+    localStorage.setItem(_PIN_KEY, hash);
+    // Save to Firebase
+    if (currentUser && db) {
+        db.collection('users').doc(currentUser.uid)
+            .update({'settings.telegram.pin': hash})
+            .then(function(){ console.log('[PIN] Changed & saved to Firebase ✅'); })
+            .catch(function(e){ console.warn('[PIN] Firebase save error:', e); });
+    }
+    if (typeof _puiStatus === 'function') _puiStatus();
+    closeModal('change-pin-modal');
+    showNotification('success','🔐','Change PIN ជោគជ័យ!');
+}
+
+window.showPinPrompt  = showPinPrompt;
+window.pinConfirm     = pinConfirm;
+window.pinSetConfirm  = pinSetConfirm;
+window.pinChgConfirm  = pinChgConfirm;
+window.updatePinStatus = _puiStatus;
 </script>
