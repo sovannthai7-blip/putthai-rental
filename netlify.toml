@@ -4,6 +4,4 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-
-[functions."telegram-webhook"]
-  node_version = "18"
+  node_version = "18"  # ដាក់នៅត្រង់នេះ ដើម្បីឱ្យវាអនុវត្តលើគ្រប់ Function ទាំងអស់
