@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>PUTTHAI — ផ្ទៀងផ្ទាត់ Invoice</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: Arial, sans-serif; background:#f0f4f8; min-height:100vh; }
+.top { background:#1a2744; color:white; padding:20px 16px; text-align:center; }
+.top h1 { font-size:18px; font-weight:800; }
+.wrap { max-width:500px; margin:0 auto; padding:16px; }
+.loading { text-align:center; padding:50px; color:#64748b; font-size:14px; }
+.spinner { width:32px; height:32px; border:3px solid #e2e8f0; border-top-color:#1a2744; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.error-box { background:#fee2e2; border:1px solid #fca5a5; border-radius:10px; padding:24px; text-align:center; color:#dc2626; margin-top:20px; }
+.card { background:white; border-radius:12px; padding:16px; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.card h3 { font-size:16px; color:#1a2744; margin-bottom:10px; }
+.info-row { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; border-bottom:1px solid #f1f5f9; }
+.info-label { color:#64748b; }
+.info-value { font-weight:700; color:#1e293b; }
+.status-badge { display:inline-block; padding:4px 14px; border-radius:20px; font-size:11px; font-weight:700; }
+.status-paid { background:#dcfce7; color:#16a34a; }
+.status-unpaid { background:#fee2e2; color:#dc2626; }
+.status-partial { background:#fef3c7; color:#d97706; }
+.total-row { font-size:16px; font-weight:800; color:#1a2744; padding-top:10px; margin-top:8px; border-top:2px solid #e2e8f0; text-align:right; }
+.footer { text-align:center; padding:24px 16px; font-size:10px; color:#94a3b8; }
+.secure-badge { display:flex; align-items:center; gap:6px; background:#f0fdf4; border:1px solid #86efac; padding:10px 14px; border-radius:8px; margin-bottom:16px; font-size:12px; color:#16a34a; }
+</style>
+</head>
+<body>
+
+<div class="top">
+    <h1 id="co-name">PUTTHAI RENTAL</h1>
+</div>
+
+<div class="wrap" id="content">
+    <div class="loading">
+        <div class="spinner"></div>
+        កំពុងផ្ទៀងផ្ទាត់...
+    </div>
+</div>
+
+<div class="footer">PUTTHAI RENTAL · Secured Verification</div>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyDXhozODBbLA5cnSH8bxfxjjTxxlk1xGaI",
+    authDomain: "room-rental-kh.firebaseapp.com",
+    projectId: "room-rental-kh",
+    storageBucket: "room-rental-kh.firebasestorage.app",
+    messagingSenderId: "1027881837296",
+    appId: "1:1027881837296:web:6a2e0f121a39e9d7899835"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const params = new URLSearchParams(location.search);
+const invNum = (params.get('inv') || '').trim();
+const token  = (params.get('t') || '').trim();
+
+function showErr(title, msg) {
+    document.getElementById('content').innerHTML =
+        '<div class="error-box"><div style="font-size:28px;margin-bottom:8px;">🔒</div>' +
+        '<div style="font-weight:700;font-size:15px;">' + title + '</div>' +
+        '<div style="font-size:12px;margin-top:6px;opacity:0.8;">' + msg + '</div></div>';
+}
+
+function fmtUSD(n) { return '$' + (+(n||0)).toFixed(2); }
+function fmtKHR(n) { return Math.round(n||0).toLocaleString() + ' ៛'; }
+
+async function loadData() {
+    if (!invNum || !token) {
+        showErr('Access Denied', 'Invalid verification link. Missing parameters.');
+        return;
+    }
+
+    try {
+        let snap = await db.collection('users').get();
+        if (snap.empty) { showErr('គ្មានទិន្នន័យ', 'No data found'); return; }
+
+        for (let doc of snap.docs) {
+            let d = doc.data() || {};
+            let invoices = d.invoices || [];
+            let custs    = d.customers || [];
+            let rooms    = d.rooms || [];
+            let pays     = d.payments || [];
+            let settings = d.settings || {};
+
+            let coName = (settings.owner && settings.owner.companyName) ? settings.owner.companyName : 'PUTTHAI RENTAL';
+            document.getElementById('co-name').innerText = coName;
+
+            // 🔒 SECURITY FIX: Match BOTH invoice number AND verify token
+            let inv = invoices.find(function(i) {
+                return i.number === invNum && i.verifyToken === token;
+            });
+
+            if (!inv) continue;
+
+            // 🔒 SECURITY FIX: Show ONLY this invoice, NOT all customer history
+            let cust = custs.find(function(c){ return c.id === inv.customerId; });
+            let room = rooms.find(function(r){ return r.id === inv.roomId; });
+
+            let st = (inv.status==='paid'||inv.status==='settled') ? 'paid'
+                   : inv.status==='partial' ? 'partial' : 'unpaid';
+
+            let badge = st==='paid'
+                ? '<span class="status-badge status-paid">✅ PAID</span>'
+                : st==='partial'
+                ? '<span class="status-badge status-partial">🟡 PARTIAL</span>'
+                : '<span class="status-badge status-unpaid">🔴 UNPAID</span>';
+
+            let ivPays  = pays.filter(function(p){ return p.invoiceId === inv.id; });
+            let paidAmt = ivPays.reduce(function(t,p){ return t + (p.amount||0); }, 0);
+            let remain  = Math.max(0, (inv.total||0) - paidAmt);
+
+            let html = '<div class="secure-badge">🔒 Verified Invoice · Secure Link</div>';
+
+            html += '<div class="card">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+            html += '<div><div style="font-size:15px;font-weight:800;color:#1a2744;">Invoice #' + (inv.number||'—') + '</div>';
+            html += '<div style="font-size:11px;color:#94a3b8;">ខែ ' + (inv.month||'—') + '</div></div>';
+            html += badge + '</div>';
+
+            if (cust) {
+                html += '<div class="info-row"><span class="info-label">👤 ឈ្មោះ</span><span class="info-value">' + cust.name + '</span></div>';
+                if (cust.phone) html += '<div class="info-row"><span class="info-label">📞 ទូរស័ព្ទ</span><span class="info-value">' + cust.phone + '</span></div>';
+            }
+            if (room) {
+                html += '<div class="info-row"><span class="info-label">🏠 បន្ទប់</span><span class="info-value">' + room.number + '</span></div>';
+            }
+
+            if (inv.rent)       html += '<div class="info-row"><span class="info-label">ថ្លៃបន្ទប់</span><span class="info-value">' + fmtUSD(inv.rent) + '</span></div>';
+            if (inv.elecKHR)    html += '<div class="info-row"><span class="info-label">ភ្លើង</span><span class="info-value">' + fmtKHR(inv.elecKHR) + '</span></div>';
+            if (inv.waterKHR)   html += '<div class="info-row"><span class="info-label">ទឹក</span><span class="info-value">' + fmtKHR(inv.waterKHR) + '</span></div>';
+            if (inv.serviceUSD) html += '<div class="info-row"><span class="info-label">ថ្លៃសេវា</span><span class="info-value">' + fmtUSD(inv.serviceUSD) + '</span></div>';
+
+            html += '<div class="total-row">សរុប: ' + fmtUSD(inv.total) + '</div>';
+
+            if (st === 'paid' || st === 'partial') {
+                html += '<div style="background:#f0fdf4;padding:10px;border-radius:8px;margin-top:10px;text-align:center;">';
+                html += '<div style="font-size:13px;font-weight:700;color:#16a34a;">បានបង់: ' + fmtUSD(paidAmt) + '</div>';
+                if (remain > 0) {
+                    html += '<div style="font-size:13px;color:#dc2626;font-weight:700;margin-top:4px;">នៅខ្វះ: ' + fmtUSD(remain) + '</div>';
+                }
+                html += '</div>';
+            }
+
+            html += '</div>';
+
+            document.getElementById('content').innerHTML = html;
+            return;
+        }
+
+        showErr('Access Denied', 'Invalid verification link. Invoice not found or token mismatch.');
+
+    } catch(e) {
+        console.error(e);
+        showErr('Error', 'Unable to verify at this time.');
+    }
+}
+
+loadData();
+</script>
+</body>
+</html>
