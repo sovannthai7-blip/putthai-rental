@@ -12,7 +12,7 @@ function sendMessage(chatId, text) {
         const body = JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' });
         const req = https.request({
             hostname: 'api.telegram.org',
-            path: /bot${BOT_TOKEN}/sendMessage,
+            path: `/bot${BOT_TOKEN}/sendMessage`,  // ✅ កែត្រូវ
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
         }, res => {
@@ -30,7 +30,7 @@ async function getCustomerName(custId) {
     return new Promise((resolve) => {
         const req = https.request({
             hostname: 'firestore.googleapis.com',
-            path: /v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${OWNER_UID}?key=${FIREBASE_API_KEY},
+            path: `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${OWNER_UID}?key=${FIREBASE_API_KEY}`,  // ✅ កែត្រូវ
             method: 'GET'
         }, res => {
             let data = '';
@@ -49,7 +49,6 @@ async function getCustomerName(custId) {
     });
 }
 
-// Save to telegram_links collection (simple + reliable)
 async function saveTelegramLink(custId, chatId) {
     console.log('[DEBUG] saveTelegramLink - custId:', custId, 'chatId:', chatId);
     return new Promise((resolve) => {
@@ -63,7 +62,7 @@ async function saveTelegramLink(custId, chatId) {
         });
         const req = https.request({
             hostname: 'firestore.googleapis.com',
-            path: /v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/telegram_links/${docId}?key=${FIREBASE_API_KEY},
+            path: `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/telegram_links/${docId}?key=${FIREBASE_API_KEY}`,  // ✅ កែត្រូវ
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
         }, res => {
@@ -81,7 +80,7 @@ async function saveChatId(custId, chatId) {
         const docRes = await new Promise((resolve) => {
             const req = https.request({
                 hostname: 'firestore.googleapis.com',
-                path: /v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${OWNER_UID}?key=${FIREBASE_API_KEY},
+                path: `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${OWNER_UID}?key=${FIREBASE_API_KEY}`,  // ✅ កែត្រូវ
                 method: 'GET'
             }, res => {
                 let data = '';
@@ -93,7 +92,7 @@ async function saveChatId(custId, chatId) {
         });
 
         if (!docRes || !docRes.fields) return false;
-let customers = docRes.fields.customers?.arrayValue?.values || [];
+        let customers = docRes.fields.customers?.arrayValue?.values || [];
         let found = false;
         customers = customers.map(c => {
             if (c.mapValue?.fields?.id?.stringValue === custId) {
@@ -112,7 +111,7 @@ let customers = docRes.fields.customers?.arrayValue?.values || [];
         return new Promise((resolve) => {
             const req = https.request({
                 hostname: 'firestore.googleapis.com',
-                path: /v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${OWNER_UID}?key=${FIREBASE_API_KEY},
+                path: `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${OWNER_UID}?key=${FIREBASE_API_KEY}`,  // ✅ កែត្រូវ
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(updateBody) }
             }, res => {
@@ -147,43 +146,52 @@ exports.handler = async (event) => {
             console.log('[DEBUG] chatId:', chatId);
 
             if (custId) {
-                // Reply Customer ភ្លាម
                 await sendMessage(chatId,
-                    \u2705 \u179F\u1BD0\u179F\u17D0\u178F\u17B7 <b>${firstName}</b>!\n\n +
-                    \uD83C\uDFE0 <b>PUTTHAI Rental</b>\n +
-                    \uD83D\uDCF1 Telegram \u178F\u17D0\u1786\u1799\u17BC\u1785\u17A0\u17C2\u1799!\n\n +
-                    Put \u1793\u17D0\u1784\u179A\u17D2\u179A\u1786\u17BE\u178A:\n +
-                    \uD83D\uDCC4 \u179C\u17B7\u1780\u17D2\u1780\u1799\u1794\u178F\u17D2\u179A\u1794\u17D2\u179A\u1785\u17B6\u1781\u17C2\n +
-                    \uD83E\uDDFE \u1794\u1784\u17D2\u1780\u17B6\u1793\u17D0\u178A\u17C2\n +
-                    \uD83D\uDCE2 \u1787\u17BC\u1793\u178A\u17C6\u1793\u17B9\u1784\n\n +
-                    \uD83D\uDE4F \u179F\u17BC\u1798\u17A2\u179A\u1782\u17BB\u178E!
+                    `✅ សូមស្វាគមន៍ <b>${firstName}</b>!
+
+🏠 <b>PUTTHAI Rental</b>
+📱 Telegram បានភ្ជាប់ហើយ!
+
+បន្តទៅរក:
+📄 មើលកិច្ចសន្យាបច្ចុប្បន្ន
+🧾 បង់ថ្លៃជួល
+📢 ទទួលដំណឹង
+
+🙏 សូមអរគុណ!`
                 );
-                // Save + Notify Admin
                 try {
                     const custName = await getCustomerName(custId);
                     const saved = await saveTelegramLink(custId, chatId);
                     await saveChatId(custId, chatId);
                     const name = custName || firstName;
                     await sendMessage(ADMIN_CHAT_ID,
-                        \uD83D\uDD14 \u17A2\u178F\u17B7\u1790\u1787\u1793\u1794\u17B6\u1793\u178E\u17D2\u1787\u17B6\u1794\u17CB!\n\n +
-                        \uD83D\uDC64 <b>${name}</b>\n +
-                        \uD83D\uDCF1 ChatID: <code>${chatId}</code>\n +
-                        \u2705 Save: ${saved ? 'OK' : 'Manual'}
+                        `🔔 អតិថិជនថ្មីភ្ជាប់ហើយ!
+
+👤 <b>${name}</b>
+📱 ChatID: <code>${chatId}</code>
+✅ Save: ${saved ? 'OK' : 'Manual'}`
                     );
                 } catch(e) {
                     await sendMessage(ADMIN_CHAT_ID,
-                        \uD83D\uDD14 Customer START!\n\uD83D\uDC64 ${firstName}\n\uD83D\uDCF1 <code>${chatId}</code>
+                        `🔔 Customer START!
+👤 ${firstName}
+📱 <code>${chatId}</code>`
                     );
                 }
             } else {
                 await sendMessage(chatId,
-                    \uD83C\uDFE0 \u179F\u1BD0\u179F\u17D0\u178F\u17B7 <b>${firstName}</b>!\n\n +
-                    Welcome to <b>PUTTHAI Rental Bot</b>!\n\n +
-                    \uD83D\uDCF1 \u179F\u17BC\u1798 Scan QR Code \u1796\u17B8 Invoice\n +
-                    \u178A\u17BE\u1798\u17D2\u1794\u17B7\u178E\u17D2\u1787\u17B6\u1794\u1782\u178E\u1793\u17B8\u179A\u1794\u179F\u17CB\u17A2\u17D2\u1793\u1780\u17D0
+                    `🏠 សូមស្វាគមន៍ <b>${firstName}</b>!
+
+Welcome to <b>PUTTHAI Rental Bot</b>!
+
+📱 សូម Scan QR Code ពី Invoice
+ឬបញ្ចូលលេខកិច្ចសន្យាដើម្បីភ្ជាប់គណនី`
                 );
                 await sendMessage(ADMIN_CHAT_ID,
-                    \uD83D\uDD14 \u1798\u17B6\u1793\u17A2\u17D2\u1793\u1780\u1785\u17BC\u179B Bot!\n\uD83D\uDC64 ${firstName}\n\uD83D\uDCF1 <code>${chatId}</code>\n\u26A0\uFE0F \u1798\u17B7\u1793\u178F\u17B6\u1793\u17CB Scan QR
+                    `🔔 អតិថិជនថ្មីបើក Bot!
+👤 ${firstName}
+📱 <code>${chatId}</code>
+⚠️ មិនទាន់មាន Scan QR`
                 );
             }
         }
