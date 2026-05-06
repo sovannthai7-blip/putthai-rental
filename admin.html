@@ -16112,6 +16112,26 @@ auth.onAuthStateChanged(async function(user) {
 
         // Load data from Firestore
         await loadFromFirestore();
+
+        // ── Sync telegram_links → customers ──
+        try {
+            const tgSnap = await db.collection('telegram_links').get();
+            tgSnap.docs.forEach(doc => {
+                const d = doc.data();
+                if (!d.custId || !d.chatId) return;
+                const cust = customers.find(c =>
+                    c.id === d.custId ||
+                    c.id === 'cust_' + d.custId ||
+                    (c.id && c.id.replace('cust_','') === String(d.custId).replace('cust_',''))
+                );
+                if (cust && !cust.telegramChatId) {
+                    cust.telegramChatId = String(d.chatId);
+                    if (d.firstName) cust.telegramName = d.firstName;
+                }
+            });
+            renderCustomerList();
+        } catch(e) { console.warn('TG sync error:', e); }
+
         // ── Real-time listener: Auto-refresh when Mobile App sends meter data ──
         if (window._firestoreUnsubscribe) window._firestoreUnsubscribe();
         let OWNER_UID = 'vnS4H9c5HBOvBqUxUKpTqho0aMt2';
