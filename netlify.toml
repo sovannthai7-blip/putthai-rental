@@ -2,6 +2,5 @@
   functions = "netlify/functions"
 
 [functions]
-  directory = "netlify/functions"
   node_bundler = "esbuild"
-  node_version = "18"  # ដាក់នៅត្រង់នេះ ដើម្បីឱ្យវាអនុវត្តលើគ្រប់ Function ទាំងអស់
+  node_version = "18"  # បង្ខំឱ្យប្រើ Node 18 គ្រប់ Functions ទាំងអស់
