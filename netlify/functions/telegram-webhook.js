@@ -1,4 +1,4 @@
-// PUTTHAI Rental — Telegram Bot Webhook
+// PUTTHAI Rental - Telegram Bot Webhook
 const https = require('https');
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8689603493:AAESjzErIj0gb6iLA0gmUDUj16O22rzp-VQ';
@@ -49,8 +49,12 @@ async function getCustomerName(custId) {
     });
 }
 
+// Save to telegram_links collection (simple + reliable)
 async function saveTelegramLink(custId, chatId) {
-    console.log('[DEBUG] saveTelegramLink - custId:', custId, 'chatId:', chatId);
+    // Normalize custId - ensure has "cust_" prefix
+    const normalCustId = custId.startsWith('cust_') ? custId : 'cust_' + custId;
+    console.log('[DEBUG] saveTelegramLink - custId:', normalCustId, 'chatId:', chatId);
+    custId = normalCustId;
     return new Promise((resolve) => {
         const docId = String(chatId);
         const body = JSON.stringify({
@@ -92,12 +96,17 @@ async function saveChatId(custId, chatId) {
         });
 
         if (!docRes || !docRes.fields) return false;
+
         let customers = docRes.fields.customers?.arrayValue?.values || [];
         let found = false;
+        const normalCustId = custId.startsWith('cust_') ? custId : 'cust_' + custId;
         customers = customers.map(c => {
-            if (c.mapValue?.fields?.id?.stringValue === custId) {
+            const cid = c.mapValue?.fields?.id?.stringValue || '';
+            if (cid === custId || cid === normalCustId || 
+                cid.replace('cust_','') === custId.replace('cust_','')) {
                 found = true;
                 c.mapValue.fields.telegramChatId = { stringValue: String(chatId) };
+                console.log('[DEBUG] Matched customer:', cid, '→ chatId:', chatId);
             }
             return c;
         });
@@ -108,18 +117,24 @@ async function saveChatId(custId, chatId) {
             fields: { ...docRes.fields, customers: { arrayValue: { values: customers } } }
         });
 
+        const patchBody = JSON.stringify({
+            fields: { customers: { arrayValue: { values: customers } } }
+        });
         return new Promise((resolve) => {
             const req = https.request({
                 hostname: 'firestore.googleapis.com',
-                path: `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${OWNER_UID}?key=${FIREBASE_API_KEY}`,
+                path: `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${OWNER_UID}?updateMask.fieldPaths=customers&key=${FIREBASE_API_KEY}`,
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(updateBody) }
+                headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(patchBody) }
             }, res => {
                 res.on('data', () => {});
-                res.on('end', () => resolve(res.statusCode === 200));
+                res.on('end', () => {
+                    console.log('[DEBUG] saveChatId PATCH status:', res.statusCode);
+                    resolve(res.statusCode === 200);
+                });
             });
-            req.on('error', () => resolve(false));
-            req.write(updateBody);
+            req.on('error', (e) => { console.log('[DEBUG] PATCH error:', e); resolve(false); });
+            req.write(patchBody);
             req.end();
         });
     } catch(e) { return false; }
@@ -146,50 +161,45 @@ exports.handler = async (event) => {
             console.log('[DEBUG] chatId:', chatId);
 
             if (custId) {
-                await sendMessage(chatId, `✅ សូមស្វាគមន៍ <b>${firstName}</b>!
-
-🏠 <b>PUTTHAI Rental</b>
-📱 Telegram បានភ្ជាប់ហើយ!
-
-បន្តទៅរក:
-📄 មើលកិច្ចសន្យាបច្ចុប្បន្ន
-🧾 បង់ថ្លៃជួល
-📢 ទទួលដំណឹង
-
-🙏 សូមអរគុណ!`);
-                
+                // Reply Customer ភ្លាម
+                await sendMessage(chatId,
+                    '✅ សូស្ដី <b>' + firstName + '</b>!\n\n' +
+                    '🏠 <b>PUTTHAI Rental</b>\n' +
+                    '📱 Telegram តភ្ជាប់រួចហើយ!\n\n' +
+                    'Put នឹងទទួល:\n' +
+                    '📄 វិក្កយបត្រប្រចាំខែ\n' +
+                    '🧾 បង្កាន់ដៃ\n' +
+                    '📢 ជូនដំណឹង\n\n' +
+                    '🙏 សូមអរគុណ!'
+                );
+                // Save + Notify Admin
                 try {
                     const custName = await getCustomerName(custId);
                     const saved = await saveTelegramLink(custId, chatId);
                     await saveChatId(custId, chatId);
                     const name = custName || firstName;
-                    await sendMessage(ADMIN_CHAT_ID, `🔔 អតិថិជនថ្មីភ្ជាប់ហើយ!
-
-👤 <b>${name}</b>
-📱 ChatID: <code>${chatId}</code>
-✅ Save: ${saved ? 'OK' : 'Manual'}`);
+                    await sendMessage(ADMIN_CHAT_ID,
+                        '🔔 អតិថិជនភ្ជាប់!\n\n' + '👤 <b>' + name + '</b>\n' + '📱 ChatID: <code>' + chatId + '</code>\n' + '✅ Save: ' + (saved ? 'OK' : 'Manual')
+                    );
                 } catch(e) {
-                    await sendMessage(ADMIN_CHAT_ID, `🔔 Customer START!
-👤 ${firstName}
-📱 <code>${chatId}</code>`);
+                    await sendMessage(ADMIN_CHAT_ID,
+                        '🔔 Customer START!\n👤 ' + firstName + '\n📱 <code>' + chatId + '</code>'
+                    );
                 }
             } else {
-                await sendMessage(chatId, `🏠 សូមស្វាគមន៍ <b>${firstName}</b>!
-
-Welcome to <b>PUTTHAI Rental Bot</b>!
-
-📱 សូម Scan QR Code ពី Invoice
-ឬបញ្ចូលលេខកិច្ចសន្យាដើម្បីភ្ជាប់គណនី`);
-                
-                await sendMessage(ADMIN_CHAT_ID, `🔔 អតិថិជនថ្មីបើក Bot!
-👤 ${firstName}
-📱 <code>${chatId}</code>
-⚠️ មិនទាន់មាន Scan QR`);
+                await sendMessage(chatId,
+                    '🏠 សូស្ដី <b>' + firstName + '</b>!\n\n' +
+                    'Welcome to <b>PUTTHAI Rental Bot</b>!\n\n' +
+                    '📱 សូម Scan QR Code ពី Invoice\n' +
+                    'ដើម្បីភ្ជាប់គណនីរបស់អ្នក'
+                );
+                await sendMessage(ADMIN_CHAT_ID,
+                    '🔔 មានអ្នកចូល Bot!\n👤 ' + firstName + '\n📱 <code>' + chatId + '</code>\n⚠️ មិនទាន់ Scan QR'
+                );
             }
         }
         return { statusCode: 200, body: 'OK' };
     } catch(e) {
-        console.error('Error:', e);
         return { statusCode: 200, body: 'OK' };
     }
 };
